@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Web Data Acquisition System{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">DataAcq LLM</a>
+    <div class="nav-links">
+      <a href="/" class="{% if active_tab == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="/jobs/new" class="{% if active_tab == 'create' %}active{% endif %}">Create Job</a>
+      <a href="/docs" target="_blank">API Docs</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -8,6 +8,11 @@ from .extractor import ContentExtractor
 from .preprocessor import ContentPreprocessor
 from .json_exporter import JSONExporter
 from .url_manager import URLManager
+from .storage import PostgresStorage
+from .media_downloader import DefaultMediaDownloader
+from .error_manager import ErrorManager
+from .crawler import Crawler
+from .job_manager import JobManager
 
 __all__ = [
     "HTTPXRetriever",
@@ -17,4 +22,9 @@ __all__ = [
     "ContentPreprocessor",
     "JSONExporter",
     "URLManager",
+    "PostgresStorage",
+    "DefaultMediaDownloader",
+    "ErrorManager",
+    "Crawler",
+    "JobManager",
 ]

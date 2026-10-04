@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Errors for Job {{ job.job_id[:8] }} — Web Data Acquisition{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h1 class="card-title">Categorized Error Logs</h1>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Job: <code>{{ job.job_id }}</code></span>
+    </div>
+    <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-secondary">Back to Monitor</a>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Error Type</th>
+          <th>Attempt</th>
+          <th>Timestamp</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if errors %}
+          {% for err in errors %}
+          <tr>
+            <td>
+              <span class="badge badge-failed">{{ err.error_type }}</span>
+            </td>
+            <td>{{ err.attempt }}</td>
+            <td>{{ err.timestamp.strftime('%Y-%m-%d %H:%M:%S') if err.timestamp else '-' }}</td>
+            <td style="color: var(--text-muted); font-family: monospace; font-size: 0.85rem;">
+              {{ err.message }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--accent-green); padding: 2rem;">
+              No errors recorded for this job. All requests succeeded!
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Create Scraping Job — Web Data Acquisition{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 760px; margin: 0 auto;">
+  <div class="card-header">
+    <h1 class="card-title">New Scraping Job Configuration</h1>
+  </div>
+
+  <form action="/jobs" method="POST" id="create-job-form">
+    <div class="form-group">
+      <label class="form-label" for="seed_urls">Seed URLs (One per line)</label>
+      <textarea
+        name="seed_urls"
+        id="seed_urls"
+        class="form-textarea"
+        rows="4"
+        placeholder="https://example.com&#10;https://example.org"
+        required
+      ></textarea>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="crawl_depth">Crawl Depth</label>
+        <input type="number" name="crawl_depth" id="crawl_depth" class="form-input" value="2" min="0" max="10">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="timeout_seconds">Timeout (seconds)</label>
+        <input type="number" name="timeout_seconds" id="timeout_seconds" class="form-input" value="15" min="1" max="120">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="max_retries">Max Retries</label>
+        <input type="number" name="max_retries" id="max_retries" class="form-input" value="3" min="0" max="10">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="domain_rate_limit">Domain Rate (req/sec)</label>
+        <input type="number" step="0.5" name="domain_rate_limit" id="domain_rate_limit" class="form-input" value="2.0" min="0.1">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label class="form-label" for="max_concurrency">Max Concurrency</label>
+        <input type="number" name="max_concurrency" id="max_concurrency" class="form-input" value="3" min="1" max="20">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="robots_mode">Robots.txt Policy</label>
+        <select name="robots_mode" id="robots_mode" class="form-select">
+          <option value="respect" selected>Respect (Recommended)</option>
+          <option value="ignore">Ignore</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-bottom: 1.5rem;">
+      <div class="checkbox-group">
+        <input type="checkbox" name="recursive" id="recursive" checked>
+        <label for="recursive" class="form-label" style="margin: 0; cursor: pointer;">Recursive link discovery</label>
+      </div>
+      <div class="checkbox-group">
+        <input type="checkbox" name="javascript_fallback" id="javascript_fallback" checked>
+        <label for="javascript_fallback" class="form-label" style="margin: 0; cursor: pointer;">Playwright JS fallback</label>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+      <a href="/" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" id="btn-submit-job">Validate & Start Job</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -88,6 +88,20 @@ class ScrapingJob(Base):
             self.created_at = datetime.now(timezone.utc)
         if self.crawl_depth is None:
             self.crawl_depth = 2
+        if self.recursive is None:
+            self.recursive = True
+        if self.javascript_fallback is None:
+            self.javascript_fallback = True
+        if self.robots_mode is None:
+            self.robots_mode = "respect"
+        if self.timeout_seconds is None:
+            self.timeout_seconds = 15
+        if self.max_retries is None:
+            self.max_retries = 3
+        if self.domain_rate_limit is None:
+            self.domain_rate_limit = 2.0
+        if self.max_concurrency is None:
+            self.max_concurrency = 3
         if self.total_urls is None:
             self.total_urls = 0
         if self.processed_urls is None:

@@ -94,6 +94,10 @@ class JSONExporter:
             logger.error(f"Failed to export JSON results for job {job_id}: {exc}")
             raise ExportError(f"Export failed for job {job_id}: {exc}") from exc
 
+    def export_dataset(self, documents: List[ProcessedDocument], job_id: str) -> str:
+        """Alias for export_job_results conforming to JobManager interface."""
+        return self.export_job_results(job_id=job_id, documents=documents)
+
     def export_single_document(
         self,
         job_id: str,
@@ -110,10 +114,17 @@ class JSONExporter:
             json_str = json.dumps(data, indent=2, ensure_ascii=False)
 
             temp_fd, temp_path = tempfile.mkstemp(dir=target_dir, prefix="page_", suffix=".tmp")
-            with open(temp_fd, "w", encoding="utf-8") as f:
-                f.write(json_str)
-            os.replace(temp_path, target_path)
-
-            return os.path.abspath(target_path)
+            try:
+                with open(temp_fd, "w", encoding="utf-8") as f:
+                    f.write(json_str)
+                os.replace(temp_path, target_path)
+                return os.path.abspath(target_path)
+            except Exception:
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception:
+                        pass
+                raise
         except Exception as exc:
             raise ExportError(f"Failed to export document {document.url}: {exc}") from exc

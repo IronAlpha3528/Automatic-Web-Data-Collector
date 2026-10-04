@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Monitor Job {{ job.job_id[:8] }} — Web Data Acquisition{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 840px; margin: 0 auto;">
+  <div class="card-header">
+    <div>
+      <h1 class="card-title">Job Monitor: <code>{{ job.job_id }}</code></h1>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">
+        Depth: {{ job.crawl_depth }} | JS Fallback: {{ job.javascript_fallback }} | Robots: {{ job.robots_mode }}
+      </span>
+    </div>
+    <span id="status-badge" class="badge badge-{{ job.status.lower().replace('_', '-') }}">{{ job.status }}</span>
+  </div>
+
+  <div style="margin: 1.5rem 0;">
+    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+      <span>Overall Crawl Progress</span>
+      <span id="progress-text">0%</span>
+    </div>
+    <div class="progress-bar-container">
+      <div id="progress-fill" class="progress-bar-fill"></div>
+    </div>
+  </div>
+
+  <div class="counter-grid">
+    <div class="counter-card">
+      <div class="counter-value" id="total-urls">{{ job.total_urls }}</div>
+      <div class="counter-label">Total URLs</div>
+    </div>
+    <div class="counter-card">
+      <div class="counter-value" id="processed-urls">{{ job.processed_urls }}</div>
+      <div class="counter-label">Processed</div>
+    </div>
+    <div class="counter-card">
+      <div class="counter-value" id="successful-urls" style="color: var(--accent-green);">{{ job.successful_urls }}</div>
+      <div class="counter-label">Successful</div>
+    </div>
+    <div class="counter-card">
+      <div class="counter-value" id="failed-urls" style="color: var(--accent-red);">{{ job.failed_urls }}</div>
+      <div class="counter-label">Failed</div>
+    </div>
+  </div>
+
+  <div id="action-buttons" style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
+    <a href="/jobs/{{ job.job_id }}/errors-view" class="btn btn-secondary" id="btn-view-errors">View Errors</a>
+    <a href="/jobs/{{ job.job_id }}/results-view" class="btn btn-primary" id="btn-view-results">View Results & Export</a>
+  </div>
+</div>
+
+<script src="/static/js/monitor.js"></script>
+<script>
+  initJobMonitor("{{ job.job_id }}");
+</script>
+{% endblock %}

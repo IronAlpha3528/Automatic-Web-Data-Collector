@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Web Data Acquisition{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h1 class="card-title">Scraping Jobs Dashboard</h1>
+    <a href="/jobs/new" class="btn btn-primary" id="btn-create-job">+ New Scraping Job</a>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Job ID</th>
+          <th>Status</th>
+          <th>Crawl Depth</th>
+          <th>Progress (Processed / Total)</th>
+          <th>Success / Failed</th>
+          <th>Created At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if jobs %}
+          {% for job in jobs %}
+          <tr>
+            <td><code>{{ job.job_id[:8] }}...</code></td>
+            <td>
+              <span class="badge badge-{{ job.status.lower().replace('_', '-') }}">{{ job.status }}</span>
+            </td>
+            <td>{{ job.crawl_depth }}</td>
+            <td>{{ job.processed_urls }} / {{ job.total_urls }}</td>
+            <td>
+              <span style="color: var(--accent-green)">{{ job.successful_urls }}</span> /
+              <span style="color: var(--accent-red)">{{ job.failed_urls }}</span>
+            </td>
+            <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at and job.created_at.strftime is defined else (job.created_at|string)[:19] }}</td>
+            <td>
+              <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Monitor</a>
+              <a href="/jobs/{{ job.job_id }}/results-view" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Results</a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+              No scraping jobs found. Click "+ New Scraping Job" to launch your first crawl.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

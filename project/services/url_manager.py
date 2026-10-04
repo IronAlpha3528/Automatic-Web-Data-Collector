@@ -15,10 +15,48 @@ class URLManager:
     Enforces URL deduplication, depth ceilings, and non-recursive constraints.
     """
 
-    def __init__(self):
+    def __init__(self, max_depth: Optional[int] = None, recursive: bool = True):
         self._queue: deque[CrawlURL] = deque()
         self._seen_normalized: Set[str] = set()
         self._total_discovered: int = 0
+        self.max_depth = max_depth
+        self.recursive = recursive
+
+    @property
+    def total_discovered(self) -> int:
+        """Property returning total discovered count."""
+        return self._total_discovered
+
+    def has_next(self) -> bool:
+        """Alias for has_urls."""
+        return self.has_urls()
+
+    def get_next(self) -> Optional[CrawlURL]:
+        """Alias for pop_next_url."""
+        return self.pop_next_url()
+
+    def add_url(
+        self,
+        raw_url: str,
+        depth: int = 0,
+        base_url: Optional[str] = None,
+        parent_url_id: Optional[str] = None,
+    ) -> Optional[CrawlURL]:
+        """
+        Convenience method to add either a seed (depth 0) or child URL.
+        """
+        if depth == 0:
+            return self.add_seed(raw_url, parent_url_id=parent_url_id)
+
+        limit = self.max_depth if self.max_depth is not None else depth
+        items = self.add_discovered_links(
+            parent_depth=depth - 1,
+            links=[raw_url],
+            max_depth=limit,
+            recursive=self.recursive,
+            parent_url_id=parent_url_id,
+        )
+        return items[0] if items else None
 
     def is_visited(self, normalized_url: str) -> bool:
         """Returns True if the normalized URL has already been queued or visited."""

@@ -3,7 +3,7 @@ Content sufficiency detection utility matching Phase 4 & Section 10 of Implement
 Determines whether statically retrieved HTML requires Playwright JavaScript rendering.
 """
 import re
-from typing import Union, Optional
+from typing import Union, Optional, Any
 from bs4 import BeautifulSoup
 
 
@@ -17,15 +17,15 @@ MIN_BODY_TEXT_LENGTH = 80
 
 
 def needs_javascript_rendering(
-    content: Optional[Union[str, bytes]],
+    content: Optional[Union[str, bytes, Any]],
     content_type: Optional[str] = None,
 ) -> bool:
     """
     Evaluates whether HTML content is insufficient and requires dynamic JavaScript rendering.
     
     Args:
-        content: The retrieved response body (string or bytes).
-        content_type: MIME type header from HTTP response.
+        content: The retrieved response body (string, bytes, or RetrievalResult).
+        content_type: Optional MIME type header from HTTP response.
 
     Returns:
         True if the content appears to be a client-rendered SPA or lacks body text, False otherwise.
@@ -33,9 +33,16 @@ def needs_javascript_rendering(
     if content is None:
         return True
 
+    # If a RetrievalResult object was passed directly
+    if hasattr(content, "content") and not isinstance(content, (str, bytes)):
+        content_type = getattr(content, "content_type", content_type)
+        content = getattr(content, "content", None)
+        if content is None:
+            return True
+
     # Do not invoke JS rendering for PDF or binary assets
     if content_type:
-        ct = content_type.lower()
+        ct = str(content_type).lower()
         if "application/pdf" in ct or "image/" in ct or "application/octet-stream" in ct:
             return False
 
@@ -45,7 +52,7 @@ def needs_javascript_rendering(
         except Exception:
             return False
     else:
-        html = content
+        html = str(content)
 
     # 1. Check for empty or whitespace-only response
     trimmed = html.strip()
