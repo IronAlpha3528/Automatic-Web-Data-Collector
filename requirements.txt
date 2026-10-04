@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+sqlalchemy[asyncio]
+asyncpg
+httpx
+beautifulsoup4
+lxml
+playwright
+pymupdf
+pydantic
+pydantic-settings
+jinja2
+python-multipart
+pytest
