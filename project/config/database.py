@@ -42,5 +42,12 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Creates all defined database tables asynchronously."""
+    # Ensure all models are loaded in Base.metadata
+    import project.models.job
+    import project.models.url_record
+    import project.models.page
+    import project.models.media
+    import project.models.error_log
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

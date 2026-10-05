@@ -42,11 +42,11 @@ class URLRecord(Base):
     normalized_url = Column(String(2048), nullable=False)
     depth = Column(Integer, default=0, nullable=False)
     status = Column(
-        SAEnum(URLStatus, name="url_status_enum", create_type=False),
+        SAEnum(URLStatus, name="url_status_enum", create_type=True),
         default=URLStatus.QUEUED,
         nullable=False,
     )
-    parent_url_id = Column(String(36), nullable=True)
+    parent_url_id = Column(String(2048), nullable=True)
 
     # Timestamps (Section 28)
     discovered_at = Column(

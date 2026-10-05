@@ -32,7 +32,7 @@ class ScrapingJob(Base):
 
     job_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     status = Column(
-        SAEnum(JobStatus, name="job_status_enum", create_type=False),
+        SAEnum(JobStatus, name="job_status_enum", create_type=True),
         default=JobStatus.CREATED,
         nullable=False,
         index=True,
