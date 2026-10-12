@@ -229,6 +229,7 @@ class Crawler:
         processed_documents: List[ProcessedDocument] = []
         concurrency = max(1, config.max_concurrency)
         sem = asyncio.Semaphore(concurrency)
+        crawled_count = 0
 
         async def _worker_process(item: CrawlURL):
             async with sem:
@@ -237,10 +238,23 @@ class Crawler:
                 )
                 return item, await self.process_url(item, config, job_id)
 
-        # BFS Crawl Loop with bounded concurrency
+        # BFS Crawl Loop with bounded concurrency & max_urls enforcement
         while mgr.has_next():
+            if config.max_urls is not None and crawled_count >= config.max_urls:
+                logger.info(
+                    f"[{job_id}] Reached max_urls limit ({config.max_urls}). Halting crawl."
+                )
+                break
+
             batch = []
-            while mgr.has_next() and len(batch) < concurrency:
+            batch_limit = concurrency
+            if config.max_urls is not None:
+                remaining = config.max_urls - crawled_count
+                if remaining <= 0:
+                    break
+                batch_limit = min(concurrency, remaining)
+
+            while mgr.has_next() and len(batch) < batch_limit:
                 item = mgr.get_next()
                 if item:
                     batch.append(item)
@@ -249,13 +263,18 @@ class Crawler:
                 break
 
             results = await asyncio.gather(*(_worker_process(item) for item in batch))
+            crawled_count += len(batch)
 
             for current_item, result in results:
                 if result.status == "SUCCESS" and result.page:
                     processed_documents.append(result.page)
 
-                    # Expand discovered links if recursive and depth allows
-                    if config.recursive and current_item.depth < config.crawl_depth:
+                    # Expand discovered links if recursive, depth allows, and URL limit not reached
+                    if (
+                        config.recursive
+                        and current_item.depth < config.crawl_depth
+                        and (config.max_urls is None or crawled_count < config.max_urls)
+                    ):
                         newly_discovered_count = 0
                         for child_url in result.discovered_links:
                             new_item = mgr.add_url(
@@ -278,5 +297,13 @@ class Crawler:
                         if newly_discovered_count > 0 and self.storage:
                             await self.storage.update_job_counters(job_id, total_delta=newly_discovered_count)
 
-        logger.info(f"[{job_id}] Crawl complete. Processed {len(processed_documents)} pages.")
+        if config.max_urls is not None and crawled_count >= config.max_urls:
+            logger.info(f"[{job_id}] Crawl halted at URL limit: {crawled_count}/{config.max_urls} URLs crawled.")
+            if self.storage and hasattr(self.storage, "cleanup_pending_job_urls"):
+                try:
+                    await self.storage.cleanup_pending_job_urls(job_id)
+                except Exception:
+                    pass
+
+        logger.info(f"[{job_id}] Crawl complete. Processed {len(processed_documents)} pages (Total URLs crawled: {crawled_count}).")
         return processed_documents

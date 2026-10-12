@@ -40,6 +40,7 @@ class ScrapingJob(Base):
 
     # Crawl Configuration Parameters (Section 28)
     crawl_depth = Column(Integer, default=2, nullable=False)
+    max_urls = Column(Integer, nullable=True, default=None)
     recursive = Column(Boolean, default=True, nullable=False)
     javascript_fallback = Column(Boolean, default=True, nullable=False)
     robots_mode = Column(String(16), default="respect", nullable=False)

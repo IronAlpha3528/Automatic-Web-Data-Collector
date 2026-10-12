@@ -47,6 +47,7 @@ class JobManager:
 
         config = CrawlConfig(
             crawl_depth=request.crawl_depth,
+            max_urls=request.max_urls,
             recursive=request.recursive,
             javascript_fallback=request.javascript_fallback,
             robots_mode=request.robots_mode,
@@ -118,6 +119,7 @@ class JobManager:
 
             config = CrawlConfig(
                 crawl_depth=job.crawl_depth,
+                max_urls=job.max_urls,
                 recursive=job.recursive,
                 javascript_fallback=job.javascript_fallback,
                 robots_mode=job.robots_mode,

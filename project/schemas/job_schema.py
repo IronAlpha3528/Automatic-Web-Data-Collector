@@ -11,6 +11,7 @@ class CreateJobRequest(BaseModel):
     """Payload to create a new scraping job (Section 8.2)."""
     seed_urls: List[HttpUrl] = Field(..., min_length=1, description="One or more seed URLs")
     crawl_depth: int = Field(default=2, ge=0, description="Max depth of link discovery")
+    max_urls: Optional[int] = Field(default=None, ge=1, description="Maximum URLs to crawl before stopping (None = unlimited)")
     recursive: bool = Field(default=True, description="Enable recursive BFS link discovery")
     javascript_fallback: bool = Field(default=True, description="Enable Playwright fallback for dynamic pages")
     robots_mode: Literal["respect", "ignore"] = Field(default="respect", description="Robots.txt compliance mode")
@@ -25,6 +26,7 @@ class JobResponse(BaseModel):
     job_id: str
     status: JobStatus
     crawl_depth: int
+    max_urls: Optional[int] = None
     recursive: bool
     javascript_fallback: bool
     robots_mode: str

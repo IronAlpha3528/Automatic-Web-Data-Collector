@@ -110,9 +110,9 @@
             <p class="form-hint">BFS hop levels (0 = seed only).</p>
           </div>
           <div class="form-group">
-            <label class="form-label" for="max_pages">Max Pages Limit</label>
-            <input type="number" name="max_pages" id="max_pages" class="form-input" value="10" min="1" max="1000">
-            <p class="form-hint">Hard limit on total extracted pages.</p>
+            <label class="form-label" for="max_urls">Max URLs Limit</label>
+            <input type="number" name="max_urls" id="max_urls" class="form-input" value="10" min="1" max="10000" placeholder="e.g. 10 (or blank for unlimited)">
+            <p class="form-hint">Stop crawler after processing this many URLs.</p>
           </div>
         </div>
 
@@ -217,27 +217,32 @@
     document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
 
+    const setMaxUrls = (val) => {
+      const el = document.getElementById('max_urls') || document.getElementById('max_pages');
+      if (el) el.value = val;
+    };
+
     if (type === 'deep') {
       document.getElementById('crawl_depth').value = 3;
-      document.getElementById('max_pages').value = 50;
+      setMaxUrls(50);
       document.getElementById('domain_rate_limit').value = 2.0;
       document.getElementById('max_concurrency').value = 3;
       document.getElementById('javascript_fallback').checked = true;
     } else if (type === 'fast') {
       document.getElementById('crawl_depth').value = 0;
-      document.getElementById('max_pages').value = 20;
+      setMaxUrls(20);
       document.getElementById('domain_rate_limit').value = 5.0;
       document.getElementById('max_concurrency').value = 5;
       document.getElementById('javascript_fallback').checked = false;
     } else if (type === 'spa') {
       document.getElementById('crawl_depth').value = 2;
-      document.getElementById('max_pages').value = 25;
+      setMaxUrls(25);
       document.getElementById('domain_rate_limit').value = 1.0;
       document.getElementById('max_concurrency').value = 2;
       document.getElementById('javascript_fallback').checked = true;
     } else if (type === 'polite') {
       document.getElementById('crawl_depth').value = 2;
-      document.getElementById('max_pages').value = 30;
+      setMaxUrls(30);
       document.getElementById('domain_rate_limit').value = 0.5;
       document.getElementById('max_concurrency').value = 1;
       document.getElementById('javascript_fallback').checked = false;

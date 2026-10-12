@@ -8,6 +8,7 @@ from project.config.settings import CrawlConfig
 from project.schemas.url_schema import CrawlURL
 from project.schemas.job_schema import CreateJobRequest
 from project.schemas.result_schema import RetrievalResult, ParsedDocument, ExtractedContent, ProcessingError
+from project.schemas.page_schema import DocumentLink
 from project.models.job import JobStatus, ScrapingJob
 from project.services.crawler import Crawler
 from project.services.job_manager import JobManager
@@ -93,6 +94,48 @@ class TestCrawlerPipeline:
         assert result.error is not None
         assert result.error.category == "HTTP_ERROR"
         mock_storage.update_url_status.assert_called_with("test-job-002", "https://example.com/404", "FAILED")
+
+    @pytest.mark.anyio
+    async def test_crawler_max_urls_limit(self):
+        """Ensures that Crawler halts after crawling max_urls limit."""
+        mock_retriever = AsyncMock()
+        mock_retriever.retrieve.return_value = RetrievalResult(
+            url="https://example.com/page",
+            status_code=200,
+            content="<html><body><a href='https://example.com/p1'>1</a><a href='https://example.com/p2'>2</a></body></html>",
+            success=True,
+        )
+
+        mock_parser = MagicMock()
+        mock_parser.parse.return_value = MagicMock()
+
+        mock_extractor = MagicMock()
+        mock_extractor.extract.return_value = ExtractedContent(
+            title="Page",
+            headings=[],
+            paragraphs=["Text"],
+            links=[DocumentLink(url="https://example.com/p1", text="P1"), DocumentLink(url="https://example.com/p2", text="P2")],
+            cleaned_content="Text",
+        )
+
+        mock_storage = AsyncMock()
+
+        crawler = Crawler(
+            retriever=mock_retriever,
+            parser=mock_parser,
+            extractor=mock_extractor,
+            storage=mock_storage,
+        )
+
+        config = CrawlConfig(crawl_depth=2, max_urls=2, recursive=True, robots_mode="ignore")
+        docs = await crawler.crawl(
+            job_id="test-limit-job",
+            seed_urls=["https://example.com/page"],
+            config=config,
+        )
+
+        assert len(docs) == 2
+        assert mock_retriever.retrieve.call_count == 2
 
 
 class TestJobManagerStateMachine:

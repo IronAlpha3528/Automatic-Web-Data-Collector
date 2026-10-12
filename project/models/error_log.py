@@ -49,3 +49,8 @@ class ErrorLog(Base):
     # Relationships
     job = relationship("ScrapingJob", back_populates="error_logs")
     url_record = relationship("URLRecord", back_populates="error_logs")
+
+    @property
+    def retry_count(self) -> int:
+        """Alias for attempt."""
+        return self.attempt or 1

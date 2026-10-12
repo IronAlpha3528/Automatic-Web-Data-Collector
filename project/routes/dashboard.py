@@ -3,6 +3,7 @@ Web UI dashboard routes using Jinja2 templates.
 Implements the Presentation layer conforming to Section 7 of the Design Document.
 """
 from pathlib import Path
+from typing import Optional
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, responses, status
 from fastapi.templating import Jinja2Templates
 
@@ -48,6 +49,8 @@ async def create_and_start_job_form(
     request: Request,
     seed_urls: str = Form(...),
     crawl_depth: int = Form(2),
+    max_urls: Optional[int] = Form(None),
+    max_pages: Optional[int] = Form(None),
     timeout_seconds: int = Form(15),
     max_retries: int = Form(3),
     domain_rate_limit: float = Form(2.0),
@@ -62,9 +65,12 @@ async def create_and_start_job_form(
     if not urls:
         raise HTTPException(status_code=400, detail="At least one seed URL is required")
 
+    effective_max_urls = max_urls if max_urls is not None else max_pages
+
     job_req = CreateJobRequest(
         seed_urls=urls,
         crawl_depth=crawl_depth,
+        max_urls=effective_max_urls,
         recursive=recursive,
         javascript_fallback=javascript_fallback,
         robots_mode=robots_mode,

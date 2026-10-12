@@ -51,3 +51,24 @@ class Page(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+
+    @property
+    def url(self) -> str:
+        """Returns the page's original URL from the associated URLRecord."""
+        if self.url_record and self.url_record.url:
+            return self.url_record.url
+        return ""
+
+    @property
+    def images(self) -> list:
+        """Returns media items identified as images."""
+        if not self.media_items:
+            return []
+        return [m for m in self.media_items if getattr(m, "media_type", "") == "image"]
+
+    @property
+    def documents(self) -> list:
+        """Returns non-image media assets (PDFs, docs)."""
+        if not self.media_items:
+            return []
+        return [m for m in self.media_items if getattr(m, "media_type", "") != "image"]

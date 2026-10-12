@@ -2,7 +2,7 @@
 Application and crawling configuration module.
 Centralizes environment configuration and crawl defaults.
 """
-from typing import Literal
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,6 +13,7 @@ class CrawlConfig(BaseModel):
     Baseline defaults follow Section 6 of Technical Implementation Plan.
     """
     crawl_depth: int = Field(default=2, ge=0, description="Max depth of link traversal (0 = seed only)")
+    max_urls: Optional[int] = Field(default=None, ge=1, description="Maximum number of URLs to crawl before stopping (None = unlimited)")
     recursive: bool = Field(default=True, description="Whether to discover and follow hyperlinks")
     javascript_fallback: bool = Field(default=True, description="Enable Playwright fallback for JS-rendered pages")
     robots_mode: Literal["respect", "ignore"] = Field(default="respect", description="Robots.txt compliance mode")

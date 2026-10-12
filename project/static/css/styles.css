@@ -73,6 +73,23 @@
   --radius-full: 9999px;
 }
 
+/* Visibility & Text Utilities */
+.d-none {
+  display: none !important;
+}
+
+.text-danger {
+  color: var(--color-danger) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+.text-success {
+  color: var(--color-success) !important;
+}
+
 /* Base Reset */
 *, *::before, *::after {
   box-sizing: border-box;

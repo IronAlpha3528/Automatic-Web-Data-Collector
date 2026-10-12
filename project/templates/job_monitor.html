@@ -22,6 +22,7 @@
       </div>
       <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
         <span class="brand-badge">Depth: {{ job.crawl_depth }}</span>
+        <span class="brand-badge">Max URLs: {{ job.max_urls if job.max_urls else 'Unlimited' }}</span>
         <span class="brand-badge">Robots: {{ job.robots_mode }}</span>
         <span class="brand-badge">JS Fallback: {{ 'Active' if job.javascript_fallback else 'Disabled' }}</span>
         <span class="brand-badge">Rate: {{ job.domain_rate_limit }} req/s</span>
@@ -112,7 +113,7 @@
     <!-- Actions & Controls -->
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
       <div>
-        <button id="btn-stop-crawling" class="btn btn-outline-danger" style="display: {% if job.status in ['RUNNING', 'CREATED'] %}inline-flex{% else %}none{% endif %};" onclick="openStopModal()">
+        <button id="btn-stop-crawling" class="btn btn-outline-danger {% if job.status not in ['RUNNING', 'CREATED'] %}d-none{% endif %}" onclick="openStopModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><rect width="6" height="6" x="9" y="9"/></svg>
           Stop Crawling
         </button>
@@ -127,7 +128,7 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           View Error Logs
         </a>
-        <a href="/api/jobs/{{ job.job_id }}/export" class="btn btn-brand" id="btn-export-dataset" style="display: {% if job.status in ['COMPLETED', 'COMPLETED_WITH_ERRORS', 'CANCELLED'] %}inline-flex{% else %}none{% endif %};">
+        <a href="/api/jobs/{{ job.job_id }}/export" class="btn btn-brand {% if job.status not in ['COMPLETED', 'COMPLETED_WITH_ERRORS', 'CANCELLED'] %}d-none{% endif %}" id="btn-export-dataset">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download JSON Dataset
         </a>

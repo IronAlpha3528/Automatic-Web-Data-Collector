@@ -38,6 +38,7 @@ class PostgresStorage:
                     job_id=job_id,
                     status=JobStatus.CREATED,
                     crawl_depth=config.crawl_depth,
+                    max_urls=config.max_urls,
                     recursive=config.recursive,
                     javascript_fallback=config.javascript_fallback,
                     robots_mode=config.robots_mode,
@@ -337,6 +338,23 @@ class PostgresStorage:
                     .where(
                         URLRecord.job_id == job_id,
                         URLRecord.status.in_([URLStatus.PROCESSING, URLStatus.QUEUED]),
+                    )
+                    .values(
+                        status=URLStatus.SKIPPED,
+                        processing_completed_at=datetime.now(timezone.utc),
+                    )
+                )
+                await session.execute(stmt)
+
+    async def cleanup_pending_job_urls(self, job_id: str) -> None:
+        """Marks remaining QUEUED URLs as SKIPPED when a job completes after hitting max_urls limit."""
+        async with self.session_factory() as session:
+            async with session.begin():
+                stmt = (
+                    update(URLRecord)
+                    .where(
+                        URLRecord.job_id == job_id,
+                        URLRecord.status == URLStatus.QUEUED,
                     )
                     .values(
                         status=URLStatus.SKIPPED,

@@ -121,14 +121,14 @@
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span style="font-size: 0.8125rem; font-weight: 600; min-width: 32px;">{{ pct }}%</span>
                 <div class="mini-progress-bar">
-                  <div class="mini-progress-fill" style="width: {{ pct }}%;"></div>
+                  <div class="mini-progress-fill" data-progress="{{ pct }}"></div>
                 </div>
               </div>
             </td>
             <td>
-              <span style="color: var(--color-success); font-weight: 600;">{{ job.successful_urls }}</span>
-              <span style="color: var(--text-muted);">/</span>
-              <span style="color: {% if job.failed_urls > 0 %}var(--color-danger){% else %}var(--text-muted){% endif %}; font-weight: 600;">{{ job.failed_urls }}</span>
+              <span class="text-success" style="font-weight: 600;">{{ job.successful_urls }}</span>
+              <span class="text-muted">/</span>
+              <span class="{% if job.failed_urls > 0 %}text-danger{% else %}text-muted{% endif %}" style="font-weight: 600;">{{ job.failed_urls }}</span>
             </td>
             <td style="color: var(--text-secondary); font-size: 0.8125rem;">
               {{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else 'N/A' }}
@@ -211,5 +211,9 @@
       }
     });
   }
+
+  document.querySelectorAll('.mini-progress-fill[data-progress]').forEach(el => {
+    el.style.width = el.getAttribute('data-progress') + '%';
+  });
 </script>
 {% endblock %}
