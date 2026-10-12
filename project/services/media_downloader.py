@@ -2,7 +2,6 @@
 MediaDownloader service for streaming and saving binary images and PDFs.
 Conforms to project.interfaces.media.MediaDownloader protocol.
 """
-import os
 import hashlib
 import mimetypes
 from pathlib import Path
@@ -61,7 +60,14 @@ class DefaultMediaDownloader:
         url_hash = hashlib.sha256(media.url.encode("utf-8")).hexdigest()[:16]
 
         try:
+            headers = {
+                "User-Agent": (
+                    "WebDataAcquisitionBot/1.0 (https://github.com/SE_PROJECT; bot@webdataacq.org) "
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                ),
+            }
             async with httpx.AsyncClient(
+                headers=headers,
                 timeout=httpx.Timeout(self.timeout),
                 follow_redirects=True,
             ) as client:

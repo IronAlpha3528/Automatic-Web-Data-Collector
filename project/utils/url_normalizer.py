@@ -3,7 +3,6 @@ URL validation and normalization module matching Section 7 of Implementation Pla
 Standardizes URLs deterministically to prevent duplicate crawling and loops.
 """
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
-import posixpath
 import re
 
 SUPPORTED_SCHEMES = {"http", "https"}

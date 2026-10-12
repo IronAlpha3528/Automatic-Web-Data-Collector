@@ -5,7 +5,7 @@ Generates structured, validated JSON files conforming strictly to Appendix B sch
 import os
 import json
 import tempfile
-from typing import List, Optional, Union
+from typing import List, Optional
 from project.schemas.page_schema import ProcessedDocument
 from project.config.settings import settings
 from project.utils.exceptions import ExportError
@@ -75,10 +75,7 @@ class JSONExporter:
                 with open(temp_fd, "w", encoding="utf-8") as f:
                     f.write(json_str)
                 # Atomic replace
-                if os.path.exists(target_path):
-                    os.replace(temp_path, target_path)
-                else:
-                    os.rename(temp_path, target_path)
+                os.replace(temp_path, target_path)
             except Exception:
                 if os.path.exists(temp_path):
                     try:

@@ -2,8 +2,7 @@
 Unit tests for Phase 8: Persistence Layer (Storage, MediaDownloader, ErrorManager).
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock
-from project.schemas.page_schema import MediaReference, ProcessedDocument, PageMetadata, DocumentLink
+from project.schemas.page_schema import MediaReference
 from project.schemas.result_schema import ProcessingError
 from project.interfaces.storage import Storage
 from project.interfaces.media import MediaDownloader

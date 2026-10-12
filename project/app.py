@@ -7,7 +7,6 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from project.config.settings import settings
 from project.config.database import init_db
 from project.routes.jobs import router as jobs_router
 from project.routes.results import router as results_router
@@ -30,6 +29,12 @@ async def lifespan(app: FastAPI):
         )
     yield
     logger.info("Shutting down Web Data Acquisition System.")
+    try:
+        from project.routes.jobs import _job_manager
+        if _job_manager:
+            await _job_manager.close()
+    except Exception as close_exc:
+        logger.warning(f"Error during shutdown resource cleanup: {close_exc}")
 
 
 app = FastAPI(

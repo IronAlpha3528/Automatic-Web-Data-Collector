@@ -3,7 +3,6 @@ Playwright dynamic browser renderer implementation matching Phase 4 & Section 10
 Implements the Renderer interface protocol with resource cleanup and bounded concurrency.
 """
 import asyncio
-from typing import Optional
 from project.config.settings import CrawlConfig
 from project.interfaces.renderer import Renderer
 from project.schemas.result_schema import RetrievalResult, ProcessingError

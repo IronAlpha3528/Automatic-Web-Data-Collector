@@ -5,9 +5,10 @@ Conforms to project.interfaces.storage.Storage protocol.
 import uuid
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
-from sqlalchemy import select, update, func
+from sqlalchemy import select, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import selectinload
+from project.utils.url_normalizer import normalize_url, is_valid_url
 
 from project.config.database import AsyncSessionLocal
 from project.models.job import ScrapingJob, JobStatus
@@ -15,12 +16,9 @@ from project.models.url_record import URLRecord, URLStatus
 from project.models.page import Page
 from project.models.media import Media
 from project.models.error_log import ErrorLog
-from project.schemas.job_schema import CreateJobRequest
-from project.schemas.url_schema import CrawlURL
-from project.schemas.page_schema import ProcessedDocument, MediaReference
+from project.schemas.page_schema import ProcessedDocument
 from project.schemas.result_schema import ProcessingError
 from project.config.settings import CrawlConfig
-from project.utils.logging import logger
 
 
 class PostgresStorage:
@@ -203,23 +201,12 @@ class PostgresStorage:
         async with self.session_factory() as session:
             async with session.begin():
                 # 1. Fetch matching URLRecord
+                norm_url = normalize_url(page.url) if is_valid_url(page.url) else page.url
                 stmt = select(URLRecord).where(
                     URLRecord.job_id == page.job_id,
-                    URLRecord.url == page.url,
+                    or_(URLRecord.url == page.url, URLRecord.normalized_url == norm_url),
                 )
                 url_rec = (await session.execute(stmt)).scalar_one_or_none()
-
-                if not url_rec:
-                    # If not matched by exact URL, try normalized URL
-                    stmt = select(URLRecord).where(
-                        URLRecord.job_id == page.job_id,
-                    )
-                    records = (await session.execute(stmt)).scalars().all()
-                    # Find matching record
-                    for r in records:
-                        if r.url == page.url:
-                            url_rec = r
-                            break
 
                 if not url_rec:
                     # Create placeholder URLRecord if not found
@@ -227,7 +214,7 @@ class PostgresStorage:
                         url_id=str(uuid.uuid4()),
                         job_id=page.job_id,
                         url=page.url,
-                        normalized_url=page.url,
+                        normalized_url=norm_url,
                         depth=page.metadata.crawl_depth,
                         status=URLStatus.SUCCESS,
                         discovered_at=datetime.now(timezone.utc),
@@ -311,7 +298,7 @@ class PostgresStorage:
         async with self.session_factory() as session:
             stmt = (
                 select(Page)
-                .options(selectinload(Page.url_record))
+                .options(selectinload(Page.url_record), selectinload(Page.media_items))
                 .join(URLRecord, Page.url_id == URLRecord.url_id)
                 .where(URLRecord.job_id == job_id)
                 .order_by(Page.created_at.asc())
@@ -340,3 +327,20 @@ class PostgresStorage:
             )
             result = await session.execute(stmt)
             return list(result.scalars().all())
+
+    async def cleanup_cancelled_job_urls(self, job_id: str) -> None:
+        """Marks any in-flight PROCESSING or QUEUED URLs as SKIPPED when a job is cancelled."""
+        async with self.session_factory() as session:
+            async with session.begin():
+                stmt = (
+                    update(URLRecord)
+                    .where(
+                        URLRecord.job_id == job_id,
+                        URLRecord.status.in_([URLStatus.PROCESSING, URLStatus.QUEUED]),
+                    )
+                    .values(
+                        status=URLStatus.SKIPPED,
+                        processing_completed_at=datetime.now(timezone.utc),
+                    )
+                )
+                await session.execute(stmt)

@@ -2,7 +2,7 @@
 ErrorManager service for error categorization, recording, and fault isolation.
 Enforces Section 14 (Error Taxonomy) and Section 17 (Error Manager).
 """
-from typing import Optional, Any
+from typing import Optional
 from project.schemas.result_schema import ProcessingError
 from project.interfaces.storage import Storage
 from project.utils.exceptions import (

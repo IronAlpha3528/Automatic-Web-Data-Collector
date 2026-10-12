@@ -3,7 +3,7 @@ Centralized retry policy module matching Section 11 of Technical Implementation 
 Enforces bounded exponential retries for transient failures.
 """
 import asyncio
-from typing import Callable, TypeVar, Awaitable, Tuple, Type, Optional
+from typing import Callable, TypeVar, Awaitable, Tuple, Type
 from project.utils.logging import logger
 from project.utils.exceptions import TimeoutError, NetworkError, HTTPError
 

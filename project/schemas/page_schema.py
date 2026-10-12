@@ -1,8 +1,7 @@
 """
 Document and media schemas conforming to Appendix B representative JSON schema.
 """
-from typing import List, Dict, Any, Optional
-from datetime import datetime
+from typing import List, Any, Optional
 from pydantic import BaseModel, Field
 
 

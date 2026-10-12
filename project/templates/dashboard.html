@@ -1,52 +1,174 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard — Web Data Acquisition{% endblock %}
+{% block title %}Dashboard — Website Crawler{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="card-header">
-    <h1 class="card-title">Scraping Jobs Dashboard</h1>
-    <a href="/jobs/new" class="btn btn-primary" id="btn-create-job">+ New Scraping Job</a>
+<!-- KPI Summary Row (WebsiteCrawler metric cards) -->
+{% set total_jobs_count = jobs|length %}
+{% set running_jobs_count = jobs|selectattr("status", "equalto", "RUNNING")|list|length %}
+{% set completed_jobs_count = jobs|selectattr("status", "in", ["COMPLETED", "COMPLETED_WITH_ERRORS"])|list|length %}
+{% set total_successful_pages = jobs|map(attribute="successful_urls")|sum %}
+{% set total_processed_pages = jobs|map(attribute="processed_urls")|sum %}
+{% set success_rate = ((total_successful_pages / total_processed_pages * 100)|round|int) if total_processed_pages > 0 else 100 %}
+
+<div class="kpi-grid">
+  <div class="kpi-card accent-primary">
+    <div class="kpi-header">
+      <span class="kpi-label">Total Crawl Jobs</span>
+      <div class="kpi-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ total_jobs_count }}</div>
+    <div class="kpi-subtext">{{ completed_jobs_count }} completed</div>
   </div>
 
-  <div class="table-container">
-    <table>
+  <div class="kpi-card accent-warning">
+    <div class="kpi-header">
+      <span class="kpi-label">Active Crawlers</span>
+      <div class="kpi-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ running_jobs_count }}</div>
+    <div class="kpi-subtext">Live queue workers</div>
+  </div>
+
+  <div class="kpi-card accent-success">
+    <div class="kpi-header">
+      <span class="kpi-label">Extracted Documents</span>
+      <div class="kpi-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ total_successful_pages }}</div>
+    <div class="kpi-subtext">Clean text & media assets</div>
+  </div>
+
+  <div class="kpi-card accent-info">
+    <div class="kpi-header">
+      <span class="kpi-label">Acquisition Quality</span>
+      <div class="kpi-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+    </div>
+    <div class="kpi-value">{{ success_rate }}%</div>
+    <div class="kpi-subtext">HTTP & parse success rate</div>
+  </div>
+</div>
+
+<!-- Main Table Panel -->
+<div class="panel">
+  <div class="panel-header">
+    <div>
+      <h1 class="panel-title">Scraping Jobs Dashboard</h1>
+      <p class="panel-subtitle">Managed crawl pipelines, link frontiers, and LLM dataset extraction</p>
+    </div>
+    <a href="/jobs/new" class="btn btn-ctablk" id="btn-create-job">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      New Scraping Job
+    </a>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-pills">
+      <button class="filter-pill active" onclick="filterJobs('ALL', this)">All ({{ total_jobs_count }})</button>
+      <button class="filter-pill" onclick="filterJobs('RUNNING', this)">Running ({{ running_jobs_count }})</button>
+      <button class="filter-pill" onclick="filterJobs('COMPLETED', this)">Completed ({{ completed_jobs_count }})</button>
+      <button class="filter-pill" onclick="filterJobs('FAILED', this)">Failed ({{ jobs|selectattr('status', 'equalto', 'FAILED')|list|length }})</button>
+    </div>
+
+    <div class="search-box">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="job-search-input" class="form-input" placeholder="Search by Job ID..." oninput="searchJobs(this.value)">
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="jobs-table">
       <thead>
         <tr>
-          <th>Job ID</th>
+          <th>Job Identifier</th>
           <th>Status</th>
-          <th>Crawl Depth</th>
-          <th>Progress (Processed / Total)</th>
-          <th>Success / Failed</th>
-          <th>Created At</th>
-          <th>Actions</th>
+          <th>Depth</th>
+          <th>Progress</th>
+          <th>Pages (OK / Fail)</th>
+          <th>Created</th>
+          <th style="text-align: right;">Actions</th>
         </tr>
       </thead>
       <tbody>
         {% if jobs %}
           {% for job in jobs %}
-          <tr>
-            <td><code>{{ job.job_id[:8] }}...</code></td>
+          {% set pct = ((job.processed_urls / job.total_urls * 100)|round|int) if job.total_urls > 0 else (100 if job.status == 'COMPLETED' else 0) %}
+          <tr data-status="{{ job.status }}" data-id="{{ job.job_id }}">
             <td>
-              <span class="badge badge-{{ job.status.lower().replace('_', '-') }}">{{ job.status }}</span>
+              <code>{{ job.job_id[:8] }}</code>
+              <button class="copy-btn" onclick="copyToClipboard('{{ job.job_id }}', 'Job ID copied!')" title="Copy full UUID">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
             </td>
-            <td>{{ job.crawl_depth }}</td>
-            <td>{{ job.processed_urls }} / {{ job.total_urls }}</td>
             <td>
-              <span style="color: var(--accent-green)">{{ job.successful_urls }}</span> /
-              <span style="color: var(--accent-red)">{{ job.failed_urls }}</span>
+              <span class="badge badge-{{ job.status.lower().replace('_', '-') }}">
+                <span class="beacon {% if job.status == 'RUNNING' %}beacon-pulse{% endif %}"></span>
+                {{ job.status.replace('_', ' ') }}
+              </span>
             </td>
-            <td>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at and job.created_at.strftime is defined else (job.created_at|string)[:19] }}</td>
             <td>
-              <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Monitor</a>
-              <a href="/jobs/{{ job.job_id }}/results-view" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.8rem;">Results</a>
+              <span style="font-weight: 600; color: var(--text-primary);">{{ job.crawl_depth }}</span>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.8125rem; font-weight: 600; min-width: 32px;">{{ pct }}%</span>
+                <div class="mini-progress-bar">
+                  <div class="mini-progress-fill" style="width: {{ pct }}%;"></div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span style="color: var(--color-success); font-weight: 600;">{{ job.successful_urls }}</span>
+              <span style="color: var(--text-muted);">/</span>
+              <span style="color: {% if job.failed_urls > 0 %}var(--color-danger){% else %}var(--text-muted){% endif %}; font-weight: 600;">{{ job.failed_urls }}</span>
+            </td>
+            <td style="color: var(--text-secondary); font-size: 0.8125rem;">
+              {{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else 'N/A' }}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 0.4rem; justify-content: flex-end;">
+                <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-secondary btn-sm" title="View live progress">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Monitor
+                </a>
+                <a href="/jobs/{{ job.job_id }}/results-view" class="btn btn-secondary btn-sm" title="Inspect documents">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Results
+                </a>
+                {% if job.status in ['COMPLETED', 'COMPLETED_WITH_ERRORS', 'CANCELLED'] and job.successful_urls > 0 %}
+                <a href="/api/jobs/{{ job.job_id }}/export" class="btn btn-brand btn-sm" title="Download dataset">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export
+                </a>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% endfor %}
         {% else %}
-          <tr>
-            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-              No scraping jobs found. Click "+ New Scraping Job" to launch your first crawl.
+          <tr id="empty-state-row">
+            <td colspan="7" style="text-align: center; padding: 4rem 2rem;">
+              <div style="max-width: 360px; margin: 0 auto;">
+                <div style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--color-brand-subtle); color: var(--color-brand); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                </div>
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; font-family: var(--font-display);">No Scraping Jobs Initiated</h3>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                  Launch your first crawling job to discover and extract structured documents.
+                </p>
+                <a href="/jobs/new" class="btn btn-ctablk">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  Create Scraping Job
+                </a>
+              </div>
             </td>
           </tr>
         {% endif %}
@@ -54,4 +176,40 @@
     </table>
   </div>
 </div>
+
+<script>
+  function filterJobs(status, btn) {
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+
+    const rows = document.querySelectorAll('#jobs-table tbody tr:not(#empty-state-row)');
+    rows.forEach(row => {
+      const rowStatus = row.getAttribute('data-status');
+      if (status === 'ALL') {
+        row.style.display = '';
+      } else if (status === 'RUNNING' && rowStatus === 'RUNNING') {
+        row.style.display = '';
+      } else if (status === 'COMPLETED' && (rowStatus === 'COMPLETED' || rowStatus === 'COMPLETED_WITH_ERRORS')) {
+        row.style.display = '';
+      } else if (status === 'FAILED' && rowStatus === 'FAILED') {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  function searchJobs(query) {
+    const q = query.toLowerCase().trim();
+    const rows = document.querySelectorAll('#jobs-table tbody tr:not(#empty-state-row)');
+    rows.forEach(row => {
+      const id = (row.getAttribute('data-id') || '').toLowerCase();
+      if (!q || id.includes(q)) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+</script>
 {% endblock %}

@@ -3,21 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Web Data Acquisition System{% endblock %}</title>
+  <title>{% block title %}Website Crawler: Online Crawling, Audit and Data Extraction{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff6b00'><circle cx='12' cy='12' r='10'/><path d='M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20' stroke='%23ffffff' stroke-width='2'/></svg>">
 </head>
 <body>
   <nav class="navbar">
-    <a href="/" class="brand">DataAcq LLM</a>
+    <a href="/" class="brand-wrapper">
+      <div class="brand-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="2" y1="12" x2="22" y2="12"/>
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="brand-title">Website Crawler</span>
+        <span class="brand-badge">Engine v1.0</span>
+      </div>
+    </a>
     <div class="nav-links">
-      <a href="/" class="{% if active_tab == 'dashboard' %}active{% endif %}">Dashboard</a>
-      <a href="/jobs/new" class="{% if active_tab == 'create' %}active{% endif %}">Create Job</a>
-      <a href="/docs" target="_blank">API Docs</a>
+      <a href="/" class="nav-item {% if active_tab == 'dashboard' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/jobs/new" class="nav-item {% if active_tab == 'create' %}active{% endif %}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        New Crawl
+      </a>
+      <a href="/docs" target="_blank" class="nav-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        API
+      </a>
+      <a href="/jobs/new" class="nav-cta">
+        + Launch Crawl
+      </a>
     </div>
   </nav>
 
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <span class="beacon beacon-pulse" style="background: #10b981; color: #10b981;"></span>
+        <span style="font-size: 0.8125rem; font-weight: 600; color: #ffffff;">Website Crawler Engine Online</span>
+        <span style="font-size: 0.75rem; color: #71717a;">&bull; Async Traversal & LLM Ingestion Active</span>
+      </div>
+      <div class="footer-links">
+        <a href="/" class="footer-link">Dashboard</a>
+        <a href="/jobs/new" class="footer-link">Create Job</a>
+        <a href="/docs" target="_blank" class="footer-link">Swagger OpenAPI</a>
+        <a href="/redoc" target="_blank" class="footer-link">ReDoc API</a>
+      </div>
+      <div class="footer-copy">
+        &copy; 2026 Website Crawler. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script>
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b00" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        toast.style.transition = 'all 0.2s ease';
+        setTimeout(() => toast.remove(), 200);
+      }, 2500);
+    }
+
+    function copyToClipboard(text, label = "Copied to clipboard") {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(label);
+      }).catch(() => {
+        const input = document.createElement('input');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        showToast(label);
+      });
+    }
+  </script>
 </body>
 </html>

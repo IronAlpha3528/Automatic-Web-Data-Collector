@@ -1,7 +1,7 @@
 """
 Errors REST API router conforming to Section 34.
 """
-from typing import List, Dict, Any
+from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status
 from project.services.storage import PostgresStorage
 

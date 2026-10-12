@@ -2,10 +2,9 @@
 Content extraction module matching Phase 6 & Section 23 of Implementation Plan.
 Implements Extractor interface protocol to isolate primary content and structured data.
 """
-from typing import List, Any
+from typing import List
 from project.interfaces.extractor import Extractor
 from project.schemas.result_schema import ParsedDocument, ExtractedContent
-from project.utils.logging import logger
 
 
 class ContentExtractor(Extractor):

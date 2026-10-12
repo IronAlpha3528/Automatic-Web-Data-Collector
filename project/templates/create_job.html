@@ -1,77 +1,248 @@
 {% extends "base.html" %}
 
-{% block title %}Create Scraping Job — Web Data Acquisition{% endblock %}
+{% block title %}New Crawl — Website Crawler{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 760px; margin: 0 auto;">
-  <div class="card-header">
-    <h1 class="card-title">New Scraping Job Configuration</h1>
-  </div>
-
-  <form action="/jobs" method="POST" id="create-job-form">
-    <div class="form-group">
-      <label class="form-label" for="seed_urls">Seed URLs (One per line)</label>
-      <textarea
-        name="seed_urls"
-        id="seed_urls"
-        class="form-textarea"
-        rows="4"
-        placeholder="https://example.com&#10;https://example.org"
-        required
-      ></textarea>
-    </div>
-
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label" for="crawl_depth">Crawl Depth</label>
-        <input type="number" name="crawl_depth" id="crawl_depth" class="form-input" value="2" min="0" max="10">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="timeout_seconds">Timeout (seconds)</label>
-        <input type="number" name="timeout_seconds" id="timeout_seconds" class="form-input" value="15" min="1" max="120">
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label" for="max_retries">Max Retries</label>
-        <input type="number" name="max_retries" id="max_retries" class="form-input" value="3" min="0" max="10">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="domain_rate_limit">Domain Rate (req/sec)</label>
-        <input type="number" step="0.5" name="domain_rate_limit" id="domain_rate_limit" class="form-input" value="2.0" min="0.1">
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="form-group">
-        <label class="form-label" for="max_concurrency">Max Concurrency</label>
-        <input type="number" name="max_concurrency" id="max_concurrency" class="form-input" value="3" min="1" max="20">
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="robots_mode">Robots.txt Policy</label>
-        <select name="robots_mode" id="robots_mode" class="form-select">
-          <option value="respect" selected>Respect (Recommended)</option>
-          <option value="ignore">Ignore</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="grid-2" style="margin-bottom: 1.5rem;">
-      <div class="checkbox-group">
-        <input type="checkbox" name="recursive" id="recursive" checked>
-        <label for="recursive" class="form-label" style="margin: 0; cursor: pointer;">Recursive link discovery</label>
-      </div>
-      <div class="checkbox-group">
-        <input type="checkbox" name="javascript_fallback" id="javascript_fallback" checked>
-        <label for="javascript_fallback" class="form-label" style="margin: 0; cursor: pointer;">Playwright JS fallback</label>
-      </div>
-    </div>
-
-    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-      <a href="/" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary" id="btn-submit-job">Validate & Start Job</button>
-    </div>
-  </form>
+<div class="breadcrumbs">
+  <a href="/">Dashboard</a>
+  <span>/</span>
+  <span style="color: var(--text-primary);">Launch Crawl</span>
 </div>
+
+<div class="hro">
+  <div style="display: grid; grid-template-columns: 1fr 1.35fr; gap: 2.5rem; align-items: start;">
+    <!-- Column 1: Website Crawler Intro & Value Proposition -->
+    <div>
+      <div style="position: sticky; top: 5rem;">
+        <h1 class="panel-title" style="font-size: clamp(2rem, 3.5vw, 2.65rem); line-height: 1.15; margin-bottom: 0.85rem;">
+          New Scraping Job Configuration
+        </h1>
+        <p style="font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+          Crawl, analyze, and monitor web pages in real time at scale. Identifies technical issues automatically and exports data in clean LLM-ready JSON or Markdown formats.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 2rem;">
+          <div class="bh1stl">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6b00" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            High-throughput async crawl engine
+          </div>
+          <div class="bh1stl">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6b00" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            LLM structured JSON & Markdown export
+          </div>
+          <div class="bh1stl">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6b00" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Real-time SSE live monitoring stream
+          </div>
+          <div class="bh1stl">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff6b00" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Dynamic Playwright headless SPA rendering
+          </div>
+        </div>
+
+        <div class="ftr-crd" style="margin-top: 1rem;">
+          <div class="ftribx">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          </div>
+          <h4 style="font-size: 0.95rem; margin-bottom: 0.35rem; font-family: var(--font-display);">Zero Ingestion Cost</h4>
+          <p style="font-size: 0.8125rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+            Local PostgreSQL persistence and bounded concurrency avoid third-party proxy fees while maintaining politeness compliance.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Column 2: Signature Crawl Hero Card (.hro-crmx) -->
+    <div class="hro-crmx">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <div class="frmbdg">
+          <span class="anmsrch">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </span>
+          Run a crawl
+        </div>
+        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">
+          Config Protocol v1.0
+        </span>
+      </div>
+
+      <!-- Quick Preset Selector -->
+      <div style="margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+          <label class="form-label" style="margin-bottom: 0;">Quick Configuration Presets</label>
+        </div>
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+          <button type="button" class="filter-pill active" onclick="applyPreset('deep', this)">Deep Crawl</button>
+          <button type="button" class="filter-pill" onclick="applyPreset('fast', this)">Fast Broad</button>
+          <button type="button" class="filter-pill" onclick="applyPreset('spa', this)">Dynamic SPA</button>
+          <button type="button" class="filter-pill" onclick="applyPreset('polite', this)">Polite Docs</button>
+        </div>
+      </div>
+
+      <form action="/jobs" method="POST" id="job-form">
+        <!-- Seed URLs -->
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+            <label class="form-label" for="seed_urls" style="margin-bottom: 0;">Target Website URLs</label>
+            <span id="url-count-badge" style="font-size: 0.72rem; color: var(--color-brand); font-weight: 700; background: var(--color-brand-subtle); padding: 0.15rem 0.5rem; border-radius: var(--radius-full);">1 URL</span>
+          </div>
+          <textarea
+            name="seed_urls"
+            id="seed_urls"
+            class="form-textarea"
+            rows="3"
+            placeholder="https://example.com&#10;https://news.ycombinator.com"
+            required
+            oninput="updateUrlCount(this.value)"
+          >https://example.com</textarea>
+          <p class="form-hint">Enter target URLs (one per line). HTTP or HTTPS supported.</p>
+        </div>
+
+        <!-- Traversal Scope -->
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="crawl_depth">Crawl Depth Limit</label>
+            <input type="number" name="crawl_depth" id="crawl_depth" class="form-input" value="1" min="0" max="10">
+            <p class="form-hint">BFS hop levels (0 = seed only).</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="max_pages">Max Pages Limit</label>
+            <input type="number" name="max_pages" id="max_pages" class="form-input" value="10" min="1" max="1000">
+            <p class="form-hint">Hard limit on total extracted pages.</p>
+          </div>
+        </div>
+
+        <!-- Performance & Politeness -->
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="domain_rate_limit">Domain Rate (req/sec)</label>
+            <input type="number" step="0.1" name="domain_rate_limit" id="domain_rate_limit" class="form-input" value="2.0" min="0.1" max="20.0">
+            <p class="form-hint">Per-domain pace ceiling.</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="max_concurrency">Max Concurrency</label>
+            <input type="number" name="max_concurrency" id="max_concurrency" class="form-input" value="3" min="1" max="20">
+            <p class="form-hint">Parallel request pool.</p>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="timeout_seconds">Timeout (seconds)</label>
+            <input type="number" name="timeout_seconds" id="timeout_seconds" class="form-input" value="15" min="1" max="120">
+            <p class="form-hint">Per-request HTTP ceiling.</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="max_retries">Max Retries</label>
+            <input type="number" name="max_retries" id="max_retries" class="form-input" value="3" min="0" max="10">
+            <p class="form-hint">Exponential backoff attempts.</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="robots_mode">Robots.txt Policy</label>
+          <select name="robots_mode" id="robots_mode" class="form-select">
+            <option value="respect" selected>Respect (Strict Compliance)</option>
+            <option value="ignore">Ignore (Full Traversal)</option>
+          </select>
+          <p class="form-hint">Automatically parses and respects target robots.txt rules.</p>
+        </div>
+
+        <!-- Toggles -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.5rem;">
+          <div style="background: #f8f9fa; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem;">
+            <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+              <input type="checkbox" name="recursive" id="recursive" checked style="margin-top: 0.2rem; cursor: pointer;">
+              <div>
+                <label for="recursive" style="font-size: 0.8125rem; font-weight: 600; cursor: pointer; color: var(--text-primary); display: block;">Recursive Link Discovery</label>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0;">Extract hyperlinks within depth bound.</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="background: #f8f9fa; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem;">
+            <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+              <input type="checkbox" name="javascript_fallback" id="javascript_fallback" checked style="margin-top: 0.2rem; cursor: pointer;">
+              <div>
+                <label for="javascript_fallback" style="font-size: 0.8125rem; font-weight: 600; cursor: pointer; color: var(--text-primary); display: block;">Playwright JS Fallback</label>
+                <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0;">Headless Chromium for SPAs.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Row -->
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+          <a href="/" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-ctablk" id="btn-submit-job" style="padding: 0.65rem 1.75rem; font-size: 0.9rem;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Crawl My Site Now
+          </button>
+        </div>
+
+        <!-- WebsiteCrawler Trust Items -->
+        <div class="crtsa">
+          <div class="crtsal">
+            <div class="critms">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff6b00" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Free up to 1000 URLs
+            </div>
+            <div class="critms">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              LLM Structured JSON
+            </div>
+            <div class="critms">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Live Telemetry Stream
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function updateUrlCount(val) {
+    const urls = val.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+    const badge = document.getElementById('url-count-badge');
+    badge.innerText = `${urls.length} URL${urls.length === 1 ? '' : 's'}`;
+  }
+
+  function applyPreset(type, btn) {
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (type === 'deep') {
+      document.getElementById('crawl_depth').value = 3;
+      document.getElementById('max_pages').value = 50;
+      document.getElementById('domain_rate_limit').value = 2.0;
+      document.getElementById('max_concurrency').value = 3;
+      document.getElementById('javascript_fallback').checked = true;
+    } else if (type === 'fast') {
+      document.getElementById('crawl_depth').value = 0;
+      document.getElementById('max_pages').value = 20;
+      document.getElementById('domain_rate_limit').value = 5.0;
+      document.getElementById('max_concurrency').value = 5;
+      document.getElementById('javascript_fallback').checked = false;
+    } else if (type === 'spa') {
+      document.getElementById('crawl_depth').value = 2;
+      document.getElementById('max_pages').value = 25;
+      document.getElementById('domain_rate_limit').value = 1.0;
+      document.getElementById('max_concurrency').value = 2;
+      document.getElementById('javascript_fallback').checked = true;
+    } else if (type === 'polite') {
+      document.getElementById('crawl_depth').value = 2;
+      document.getElementById('max_pages').value = 30;
+      document.getElementById('domain_rate_limit').value = 0.5;
+      document.getElementById('max_concurrency').value = 1;
+      document.getElementById('javascript_fallback').checked = false;
+    }
+    showToast(`Applied preset: ${type.toUpperCase()}`);
+  }
+</script>
 {% endblock %}

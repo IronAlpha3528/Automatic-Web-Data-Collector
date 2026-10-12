@@ -4,7 +4,7 @@ Uses FastAPI dependency overrides to isolate from live database infrastructure.
 """
 import pytest
 from httpx import AsyncClient, ASGITransport
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from project.app import app
 from project.routes.jobs import get_job_manager
@@ -129,5 +129,16 @@ class TestJobsRESTAPI:
                 res = await client.post("/api/jobs/test-api-job-001/cancel")
                 assert res.status_code == 200
                 assert res.json()["status"] == "FAILED"
+        finally:
+            app.dependency_overrides.clear()
+
+    @pytest.mark.anyio
+    async def test_dashboard_cancel_route(self, mock_manager):
+        app.dependency_overrides[get_job_manager] = lambda: mock_manager
+        try:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                res = await client.post("/jobs/test-api-job-001/cancel", follow_redirects=False)
+                assert res.status_code == 303
+                assert res.headers["location"] == "/jobs/test-api-job-001/monitor"
         finally:
             app.dependency_overrides.clear()

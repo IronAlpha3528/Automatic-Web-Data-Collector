@@ -1,56 +1,207 @@
 {% extends "base.html" %}
 
-{% block title %}Monitor Job {{ job.job_id[:8] }} — Web Data Acquisition{% endblock %}
+{% block title %}Monitor {{ job.job_id[:8] }} — Website Crawler{% endblock %}
 
 {% block content %}
-<div class="card" style="max-width: 840px; margin: 0 auto;">
-  <div class="card-header">
+<div class="breadcrumbs">
+  <a href="/">Dashboard</a>
+  <span>/</span>
+  <span style="color: var(--text-primary);">Live Monitor</span>
+  <span>/</span>
+  <code>{{ job.job_id[:8] }}</code>
+</div>
+
+<div class="panel" style="max-width: 960px; margin: 0 auto;">
+  <div class="panel-header">
     <div>
-      <h1 class="card-title">Job Monitor: <code>{{ job.job_id }}</code></h1>
-      <span style="font-size: 0.85rem; color: var(--text-muted);">
-        Depth: {{ job.crawl_depth }} | JS Fallback: {{ job.javascript_fallback }} | Robots: {{ job.robots_mode }}
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <h1 class="panel-title" style="margin-bottom: 0;">Job: <code>{{ job.job_id }}</code></h1>
+        <button class="copy-btn" onclick="copyToClipboard('{{ job.job_id }}', 'Job UUID copied!')" title="Copy UUID">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        </button>
+      </div>
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+        <span class="brand-badge">Depth: {{ job.crawl_depth }}</span>
+        <span class="brand-badge">Robots: {{ job.robots_mode }}</span>
+        <span class="brand-badge">JS Fallback: {{ 'Active' if job.javascript_fallback else 'Disabled' }}</span>
+        <span class="brand-badge">Rate: {{ job.domain_rate_limit }} req/s</span>
+      </div>
+    </div>
+    <div>
+      <span id="status-badge" class="badge badge-{{ job.status.lower().replace('_', '-') }}">
+        <span class="beacon {% if job.status == 'RUNNING' %}beacon-pulse{% endif %}"></span>
+        <span id="status-text">{{ job.status.replace('_', ' ') }}</span>
       </span>
     </div>
-    <span id="status-badge" class="badge badge-{{ job.status.lower().replace('_', '-') }}">{{ job.status }}</span>
   </div>
 
-  <div style="margin: 1.5rem 0;">
-    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-      <span>Overall Crawl Progress</span>
-      <span id="progress-text">0%</span>
+  <div class="panel-body">
+    <!-- Progress Bar -->
+    <div class="monitor-progress-wrapper">
+      <div class="monitor-progress-header">
+        <span style="font-weight: 600; color: var(--text-secondary); font-family: var(--font-display);">Overall Crawl Progress</span>
+        <div style="display: flex; gap: 1rem;">
+          <span id="speed-text" style="color: var(--text-muted); font-size: 0.8125rem;">0.0 URLs/s</span>
+          <span id="progress-text" style="font-weight: 700; color: var(--text-primary); font-family: var(--font-display);">0%</span>
+        </div>
+      </div>
+      <div class="monitor-progress-bar">
+        <div id="progress-fill" class="monitor-progress-fill"></div>
+      </div>
     </div>
-    <div class="progress-bar-container">
-      <div id="progress-fill" class="progress-bar-fill"></div>
-    </div>
-  </div>
 
-  <div class="counter-grid">
-    <div class="counter-card">
-      <div class="counter-value" id="total-urls">{{ job.total_urls }}</div>
-      <div class="counter-label">Total URLs</div>
-    </div>
-    <div class="counter-card">
-      <div class="counter-value" id="processed-urls">{{ job.processed_urls }}</div>
-      <div class="counter-label">Processed</div>
-    </div>
-    <div class="counter-card">
-      <div class="counter-value" id="successful-urls" style="color: var(--accent-green);">{{ job.successful_urls }}</div>
-      <div class="counter-label">Successful</div>
-    </div>
-    <div class="counter-card">
-      <div class="counter-value" id="failed-urls" style="color: var(--accent-red);">{{ job.failed_urls }}</div>
-      <div class="counter-label">Failed</div>
-    </div>
-  </div>
+    <!-- 4 Telemetry Counters -->
+    <div class="kpi-grid" style="margin-bottom: 2rem;">
+      <div class="kpi-card accent-primary">
+        <div class="kpi-header">
+          <span class="kpi-label">Discovered URLs</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m10 15 5-3-5-3v6Z"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="total-urls">{{ job.total_urls }}</div>
+        <div class="kpi-subtext">Total links enqueued</div>
+      </div>
 
-  <div id="action-buttons" style="display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end;">
-    <a href="/jobs/{{ job.job_id }}/errors-view" class="btn btn-secondary" id="btn-view-errors">View Errors</a>
-    <a href="/jobs/{{ job.job_id }}/results-view" class="btn btn-primary" id="btn-view-results">View Results & Export</a>
+      <div class="kpi-card accent-info">
+        <div class="kpi-header">
+          <span class="kpi-label">Processed</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="processed-urls">{{ job.processed_urls }}</div>
+        <div class="kpi-subtext">Traversal completed</div>
+      </div>
+
+      <div class="kpi-card accent-success">
+        <div class="kpi-header">
+          <span class="kpi-label">Successful Pages</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="successful-urls" style="color: var(--color-success);">{{ job.successful_urls }}</div>
+        <div class="kpi-subtext">Clean dataset items</div>
+      </div>
+
+      <div class="kpi-card accent-warning">
+        <div class="kpi-header">
+          <span class="kpi-label">Failed / Skipped</span>
+          <div class="kpi-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+        </div>
+        <div class="kpi-value" id="failed-urls" style="color: var(--color-danger);">{{ job.failed_urls }}</div>
+        <div class="kpi-subtext">Failures isolated</div>
+      </div>
+    </div>
+
+    <!-- Live Error Stream Preview -->
+    <div id="live-errors-container" style="display: none; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <span style="font-size: 0.8125rem; font-weight: 600; color: var(--color-danger); display: flex; align-items: center; gap: 0.4rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Recent Ingestion Warnings / Errors
+        </span>
+        <a href="/jobs/{{ job.job_id }}/errors-view" style="font-size: 0.75rem; color: var(--color-danger); text-decoration: none; font-weight: 600;">View All &rarr;</a>
+      </div>
+      <div id="live-errors-list" style="font-family: var(--font-mono); font-size: 0.75rem; color: #991b1b; display: flex; flex-direction: column; gap: 0.35rem;"></div>
+    </div>
+
+    <!-- Actions & Controls -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+      <div>
+        <button id="btn-stop-crawling" class="btn btn-outline-danger" style="display: {% if job.status in ['RUNNING', 'CREATED'] %}inline-flex{% else %}none{% endif %};" onclick="openStopModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><rect width="6" height="6" x="9" y="9"/></svg>
+          Stop Crawling
+        </button>
+      </div>
+
+      <div style="display: flex; gap: 0.65rem;">
+        <a href="/jobs/{{ job.job_id }}/results-view" class="btn btn-ctablk" id="btn-view-results">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          View Extracted Documents
+        </a>
+        <a href="/jobs/{{ job.job_id }}/errors-view" class="btn btn-secondary" id="btn-view-errors">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          View Error Logs
+        </a>
+        <a href="/api/jobs/{{ job.job_id }}/export" class="btn btn-brand" id="btn-export-dataset" style="display: {% if job.status in ['COMPLETED', 'COMPLETED_WITH_ERRORS', 'CANCELLED'] %}inline-flex{% else %}none{% endif %};">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download JSON Dataset
+        </a>
+      </div>
+    </div>
   </div>
 </div>
 
-<script src="/static/js/monitor.js"></script>
+<!-- Modal Dialog: Stop Crawling Confirmation -->
+<div id="stop-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h3 class="modal-title">Stop Ongoing Crawl</h3>
+      </div>
+      <button class="copy-btn" onclick="closeStopModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Are you sure you want to halt this crawler? This operation will:
+      </p>
+      <ul style="font-size: 0.8125rem; color: var(--text-secondary); margin-left: 1.25rem; line-height: 1.6;">
+        <li>Immediately stop HTTP fetch concurrency pools.</li>
+        <li>Flush all currently extracted documents safely to PostgreSQL and disk.</li>
+        <li>Update job state to <code>CANCELLED</code> and mark pending queue items.</li>
+      </ul>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeStopModal()">Keep Crawling</button>
+      <button class="btn btn-danger" id="confirm-stop-btn" onclick="executeStopCrawling()">Confirm Stop</button>
+    </div>
+  </div>
+</div>
+
 <script>
-  initJobMonitor("{{ job.job_id }}");
+  window.JOB_ID = "{{ job.job_id }}";
+  window.INITIAL_STATUS = "{{ job.status }}";
+
+  function openStopModal() {
+    document.getElementById('stop-modal').style.display = 'flex';
+  }
+
+  function closeStopModal() {
+    document.getElementById('stop-modal').style.display = 'none';
+  }
+
+  async function executeStopCrawling() {
+    const btn = document.getElementById('confirm-stop-btn');
+    btn.disabled = true;
+    btn.innerText = 'Stopping...';
+    try {
+      const resp = await fetch(`/api/jobs/${window.JOB_ID}/cancel`, { method: 'POST' });
+      const data = await resp.json();
+      if (resp.ok) {
+        showToast('Crawling stopped successfully');
+        closeStopModal();
+        document.getElementById('btn-stop-crawling').style.display = 'none';
+        document.getElementById('btn-export-dataset').style.display = 'inline-flex';
+        const badge = document.getElementById('status-badge');
+        badge.className = 'badge badge-cancelled';
+        badge.innerHTML = '<span class="beacon"></span><span>CANCELLED</span>';
+      } else {
+        alert(data.detail || 'Failed to stop crawling');
+      }
+    } catch (e) {
+      alert('Error contacting server to stop crawler');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Confirm Stop';
+    }
+  }
 </script>
+<script src="/static/js/monitor.js"></script>
 {% endblock %}

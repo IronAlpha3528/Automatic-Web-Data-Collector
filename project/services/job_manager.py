@@ -5,17 +5,17 @@ Adheres to Section 31 (Job State Machine) and Section 46 (Complete Job Algorithm
 import asyncio
 import uuid
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Set
-from project.config.settings import CrawlConfig, settings
+from typing import Optional, List, Dict
+from project.config.settings import CrawlConfig
 from project.schemas.job_schema import CreateJobRequest, JobResponse
 from project.schemas.page_schema import ProcessedDocument
-from project.models.job import ScrapingJob, JobStatus
-from project.interfaces.storage import Storage
+from project.models.job import JobStatus
 from project.services.storage import PostgresStorage
 from project.services.crawler import Crawler
+from project.services.renderer import PlaywrightRenderer
 from project.services.json_exporter import JSONExporter
-from project.services.error_manager import ErrorManager
 from project.utils.url_normalizer import normalize_url, is_valid_url
+from project.utils.serializers import page_to_processed_document
 from project.utils.logging import logger
 
 
@@ -30,9 +30,11 @@ class JobManager:
         storage: Optional[PostgresStorage] = None,
         crawler: Optional[Crawler] = None,
         exporter: Optional[JSONExporter] = None,
+        renderer: Optional[PlaywrightRenderer] = None,
     ):
         self.storage = storage or PostgresStorage()
-        self.crawler = crawler or Crawler(storage=self.storage)
+        self.renderer = renderer or PlaywrightRenderer()
+        self.crawler = crawler or Crawler(renderer=self.renderer, storage=self.storage)
         self.exporter = exporter or JSONExporter()
         self._active_tasks: Dict[str, asyncio.Task] = {}
 
@@ -162,7 +164,35 @@ class JobManager:
             logger.info(f"Job {job_id} finalized with status {final_status}")
 
         except asyncio.CancelledError:
-            logger.warning(f"Job {job_id} was cancelled")
+            logger.warning(f"Job {job_id} was cancelled by user request")
+            try:
+                pages = await self.storage.get_pages_by_job(job_id)
+                if pages:
+                    docs = [page_to_processed_document(p, default_status="stopped") for p in pages]
+                    self.exporter.export_dataset(docs, job_id)
+            except Exception as exp_err:
+                logger.error(f"Failed to export partial results for cancelled job {job_id}: {exp_err}")
+
+            try:
+                await self.storage.cleanup_cancelled_job_urls(job_id)
+            except Exception:
+                pass
+
+            try:
+                from project.schemas.result_schema import ProcessingError
+                await self.storage.record_error(
+                    job_id=job_id,
+                    url_id=None,
+                    error=ProcessingError(
+                        category="JOB_CANCELLED",
+                        message="Crawl job stopped by user request.",
+                        attempt=1,
+                        recoverable=False,
+                    ),
+                )
+            except Exception:
+                pass
+
             await self.storage.update_job_status(
                 job_id=job_id,
                 status="FAILED",
@@ -197,5 +227,38 @@ class JobManager:
                 await task
             except (asyncio.CancelledError, Exception):
                 pass
+        else:
+            job_record = await self.storage.get_job(job_id)
+            if job_record and job_record.status in ("CREATED", "RUNNING"):
+                try:
+                    await self.storage.cleanup_cancelled_job_urls(job_id)
+                except Exception:
+                    pass
+                try:
+                    from project.schemas.result_schema import ProcessingError
+                    await self.storage.record_error(
+                        job_id=job_id,
+                        url_id=None,
+                        error=ProcessingError(
+                            category="JOB_CANCELLED",
+                            message="Crawl job stopped by user request.",
+                            attempt=1,
+                            recoverable=False,
+                        ),
+                    )
+                except Exception:
+                    pass
+                await self.storage.update_job_status(
+                    job_id=job_id,
+                    status="FAILED",
+                    completed_at=datetime.now(timezone.utc),
+                )
         job = await self.storage.get_job(job_id)
         return JobResponse.model_validate(job) if job else None
+
+    async def close(self) -> None:
+        """Gracefully closes active renderers and clients."""
+        if hasattr(self.renderer, "close"):
+            await self.renderer.close()
+        if hasattr(self.crawler, "retriever") and hasattr(self.crawler.retriever, "close"):
+            await self.crawler.retriever.close()

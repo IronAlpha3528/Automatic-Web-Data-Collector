@@ -19,6 +19,15 @@ class HTTPXRetriever(Retriever):
     Provides isolated failure handling, status classification, bounded retries, and pacing.
     """
 
+    DEFAULT_HEADERS = {
+        "User-Agent": (
+            "WebDataAcquisitionBot/1.0 (https://github.com/SE_PROJECT; bot@webdataacq.org) "
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
     def __init__(
         self,
         rate_limiter: Optional[DomainRateLimiter] = None,
@@ -26,6 +35,18 @@ class HTTPXRetriever(Retriever):
     ):
         self.rate_limiter = rate_limiter or DomainRateLimiter()
         self._custom_client = client
+        self._client = client or httpx.AsyncClient(
+            headers=self.DEFAULT_HEADERS,
+            verify=False,
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=50),
+            timeout=httpx.Timeout(15.0),
+        )
+        self._owns_client = (client is None)
+
+    async def close(self) -> None:
+        """Closes the underlying HTTPX client connection pool."""
+        if self._owns_client and self._client and not self._client.is_closed:
+            await self._client.aclose()
 
     async def _fetch(
         self,
@@ -70,19 +91,9 @@ class HTTPXRetriever(Retriever):
         # 1. Apply domain rate limiter
         await self.rate_limiter.acquire(url, rate_limit=config.domain_rate_limit)
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                          "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 WebDataAcq/1.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/pdf,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-        }
-
         async def _do_retrieve(attempt: int) -> RetrievalResult:
-            if self._custom_client:
-                resp = await self._fetch(url, self._custom_client, float(config.timeout_seconds), attempt)
-            else:
-                async with httpx.AsyncClient(headers=headers, verify=False) as client:
-                    resp = await self._fetch(url, client, float(config.timeout_seconds), attempt)
+            active_client = self._custom_client or self._client
+            resp = await self._fetch(url, active_client, float(config.timeout_seconds), attempt)
 
             content_type = resp.headers.get("content-type", "").lower()
             

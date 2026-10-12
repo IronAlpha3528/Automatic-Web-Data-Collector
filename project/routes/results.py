@@ -2,7 +2,7 @@
 Results and Export REST API routes conforming to Section 34.
 """
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.responses import FileResponse
 from project.services.storage import PostgresStorage
@@ -76,30 +76,8 @@ async def export_job_dataset(
                 detail=f"No processed records found to export for job: {job_id}",
             )
 
-        # Convert ORM pages to ProcessedDocument models
-        from project.schemas.page_schema import ProcessedDocument, PageMetadata, DocumentLink
-        docs = []
-        for p in pages:
-            page_url = p.url_record.url if getattr(p, "url_record", None) else (p.title or "unknown")
-            doc = ProcessedDocument(
-                job_id=job_id,
-                url=page_url,
-                title=p.title or "",
-                headings=p.headings or [],
-                paragraphs=p.paragraphs or [],
-                content=p.content or "",
-                tables=p.tables or [],
-                links=[DocumentLink(url=l.get("url", ""), text=l.get("text", "")) for l in (p.links or [])],
-                images=[],
-                documents=[],
-                metadata=PageMetadata(
-                    timestamp=p.processed_at.isoformat() if p.processed_at else "",
-                    crawl_depth=0,
-                    content_hash=p.content_hash or "",
-                    status="success",
-                ),
-            )
-            docs.append(doc)
+        from project.utils.serializers import page_to_processed_document
+        docs = [page_to_processed_document(p) for p in pages]
 
         exporter = JSONExporter()
         export_path = exporter.export_dataset(docs, job_id)

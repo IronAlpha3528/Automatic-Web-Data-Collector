@@ -1,52 +1,127 @@
 {% extends "base.html" %}
 
-{% block title %}Results for Job {{ job.job_id[:8] }} — Web Data Acquisition{% endblock %}
+{% block title %}Results for {{ job.job_id[:8] }} — Website Crawler{% endblock %}
 
 {% block content %}
-<div class="card">
-  <div class="card-header">
+<div class="breadcrumbs">
+  <a href="/">Dashboard</a>
+  <span>/</span>
+  <a href="/jobs/{{ job.job_id }}/monitor">Monitor ({{ job.job_id[:8] }})</a>
+  <span>/</span>
+  <span style="color: var(--text-primary);">Extracted Dataset</span>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
     <div>
-      <h1 class="card-title">Extracted Results</h1>
-      <span style="font-size: 0.85rem; color: var(--text-muted);">Job: <code>{{ job.job_id }}</code></span>
+      <h1 class="panel-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Extracted Documents & Multimodal Assets
+      </h1>
+      <p class="panel-subtitle">Job <code>{{ job.job_id }}</code> &bull; Clean structured JSON dataset ready for LLM ingestion</p>
     </div>
     <div style="display: flex; gap: 0.75rem;">
-      <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-secondary">Back to Monitor</a>
-      <a href="/api/jobs/{{ job.job_id }}/export" class="btn btn-primary" id="btn-export-json">Download JSON Dataset</a>
+      <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-secondary btn-sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        Back to Monitor
+      </a>
+      <a href="/api/jobs/{{ job.job_id }}/export" class="btn btn-brand btn-sm" id="btn-export-json">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download JSON Dataset
+      </a>
     </div>
   </div>
 
-  <div class="table-container">
-    <table>
+  <div class="filter-bar">
+    <div style="font-size: 0.8125rem; color: var(--text-muted);">
+      Total Ingested: <strong style="color: var(--text-primary);">{{ pages|length }}</strong> documents
+    </div>
+    <div class="search-box">
+      <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="doc-search-input" class="form-input" placeholder="Filter by Title or URL..." oninput="filterDocuments(this.value)">
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="docs-table">
       <thead>
         <tr>
-          <th>Title</th>
+          <th>Document Title & URL</th>
           <th>Headings</th>
           <th>Paragraphs</th>
           <th>Tables</th>
           <th>Links</th>
-          <th>Content Preview</th>
-          <th>SHA-256 Hash</th>
+          <th>Media Assets</th>
+          <th>Content Fingerprint</th>
+          <th style="text-align: right;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% if pages %}
           {% for p in pages %}
-          <tr>
-            <td><strong>{{ p.title or 'Untitled Page' }}</strong></td>
-            <td>{{ p.headings|length if p.headings else 0 }}</td>
-            <td>{{ p.paragraphs|length if p.paragraphs else 0 }}</td>
-            <td>{{ p.tables|length if p.tables else 0 }}</td>
-            <td>{{ p.links|length if p.links else 0 }}</td>
-            <td style="max-width: 320px; font-size: 0.85rem; color: var(--text-muted);">
-              {{ p.content[:150] }}...
+          <tr class="doc-row" data-search="{{ (p.title or '')|lower }} {{ p.url|lower }}">
+            <td style="max-width: 320px;">
+              <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ p.title }}">
+                {{ p.title or 'Untitled Page' }}
+              </div>
+              <div class="urlrow" title="{{ p.url }}">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <a href="{{ p.url }}" target="_blank" rel="noopener noreferrer" style="color: var(--text-secondary); text-decoration: none; overflow: hidden; text-overflow: ellipsis;">
+                  {{ p.url }}
+                </a>
+              </div>
             </td>
-            <td><code>{{ p.content_hash[:10] }}...</code></td>
+            <td>
+              <span class="badge" style="background: #f1f5f9; color: #334155;">{{ p.headings|length if p.headings else 0 }} H-tags</span>
+            </td>
+            <td>
+              <span style="font-weight: 600;">{{ p.paragraphs|length if p.paragraphs else 0 }}</span>
+            </td>
+            <td>
+              <span style="font-weight: 600;">{{ p.tables|length if p.tables else 0 }}</span>
+            </td>
+            <td>
+              <span class="badge" style="background: rgba(255, 107, 0, 0.08); color: var(--color-brand);">{{ p.links|length if p.links else 0 }}</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <span class="badge" style="background: #ecfdf5; color: #059669;">{{ p.images|length if p.images else 0 }} img</span>
+                <span class="badge" style="background: #eff6ff; color: #2563eb;">{{ p.documents|length if p.documents else 0 }} pdf</span>
+              </div>
+            </td>
+            <td>
+              {% if p.content_hash %}
+              <code>{{ p.content_hash[:10] }}...</code>
+              <button class="copy-btn" onclick="copyToClipboard('{{ p.content_hash }}', 'SHA-256 hash copied!')" title="Copy full SHA-256">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+              {% else %}
+              <span style="color: var(--text-muted);">&mdash;</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <button class="btn btn-secondary btn-sm" onclick='inspectDoc({{ loop.index0 }})'>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                Inspect
+              </button>
+            </td>
           </tr>
           {% endfor %}
         {% else %}
-          <tr>
-            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-              No extracted pages yet. The job may still be crawling.
+          <tr id="empty-results-row">
+            <td colspan="8" style="text-align: center; padding: 4rem 2rem;">
+              <div style="max-width: 360px; margin: 0 auto;">
+                <div style="width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--color-brand-subtle); color: var(--color-brand); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; font-family: var(--font-display);">No Extracted Documents</h3>
+                <p style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                  Documents will appear here once the crawler ingests and cleans HTML payloads.
+                </p>
+                <a href="/jobs/{{ job.job_id }}/monitor" class="btn btn-ctablk">
+                  Return to Live Monitor
+                </a>
+              </div>
             </td>
           </tr>
         {% endif %}
@@ -54,4 +129,105 @@
     </table>
   </div>
 </div>
+
+<!-- Modal: Document Inspector -->
+<div id="doc-modal" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title" id="modal-doc-title">Document Inspector</h3>
+        <p style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; font-family: var(--font-mono);" id="modal-doc-url"></p>
+      </div>
+      <button class="copy-btn" onclick="closeDocModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom: 1.25rem;">
+        <span class="form-label">Headings Tree</span>
+        <div id="modal-headings" style="font-size: 0.8125rem; background: #f8f9fa; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem; max-height: 140px; overflow-y: auto;"></div>
+      </div>
+      <div style="margin-bottom: 1.25rem;">
+        <span class="form-label">Cleaned Paragraphs Sample</span>
+        <div id="modal-paragraphs" style="font-size: 0.8125rem; line-height: 1.6; background: #f8f9fa; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem; max-height: 200px; overflow-y: auto; color: var(--text-secondary);"></div>
+      </div>
+      <div>
+        <span class="form-label">Multimodal Assets & Links</span>
+        <div id="modal-meta" style="font-size: 0.75rem; color: var(--text-secondary); display: flex; gap: 1rem; flex-wrap: wrap;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDocModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const DOCS_DATA = [
+    {% if pages %}
+      {% for p in pages %}
+      {
+        title: {{ (p.title or 'Untitled Page')|tojson }},
+        url: {{ p.url|tojson }},
+        headings: {{ (p.headings or [])|tojson }},
+        paragraphs: {{ (p.paragraphs or [])|tojson }},
+        imagesCount: {{ (p.images|length if p.images else 0) }},
+        documentsCount: {{ (p.documents|length if p.documents else 0) }},
+        linksCount: {{ (p.links|length if p.links else 0) }}
+      },
+      {% endfor %}
+    {% endif %}
+  ];
+
+  function filterDocuments(q) {
+    const val = q.toLowerCase().trim();
+    document.querySelectorAll('.doc-row').forEach(r => {
+      const text = r.getAttribute('data-search') || '';
+      if (!val || text.includes(val)) {
+        r.style.display = '';
+      } else {
+        r.style.display = 'none';
+      }
+    });
+  }
+
+  function inspectDoc(index) {
+    const doc = DOCS_DATA[index];
+    if (!doc) return;
+
+    document.getElementById('modal-doc-title').innerText = doc.title;
+    document.getElementById('modal-doc-url').innerText = doc.url;
+
+    const headingsEl = document.getElementById('modal-headings');
+    if (doc.headings && doc.headings.length > 0) {
+      headingsEl.innerHTML = doc.headings.map(h => `<div style="padding: 2px 0;">&bull; ${escapeHtml(h)}</div>`).join('');
+    } else {
+      headingsEl.innerHTML = '<span style="color: var(--text-muted);">No headings discovered</span>';
+    }
+
+    const paraEl = document.getElementById('modal-paragraphs');
+    if (doc.paragraphs && doc.paragraphs.length > 0) {
+      paraEl.innerHTML = doc.paragraphs.map(p => `<p style="margin-bottom: 0.5rem;">${escapeHtml(p)}</p>`).join('');
+    } else {
+      paraEl.innerHTML = '<span style="color: var(--text-muted);">No text paragraphs parsed</span>';
+    }
+
+    const metaEl = document.getElementById('modal-meta');
+    metaEl.innerHTML = `
+      <span>Images: <strong>${doc.imagesCount}</strong></span>
+      <span>PDFs: <strong>${doc.documentsCount}</strong></span>
+      <span>Outbound Links: <strong>${doc.linksCount}</strong></span>
+    `;
+
+    document.getElementById('doc-modal').style.display = 'flex';
+  }
+
+  function closeDocModal() {
+    document.getElementById('doc-modal').style.display = 'none';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.innerText = str;
+    return div.innerHTML;
+  }
+</script>
 {% endblock %}

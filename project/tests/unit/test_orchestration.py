@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, MagicMock
 from project.config.settings import CrawlConfig
 from project.schemas.url_schema import CrawlURL
 from project.schemas.job_schema import CreateJobRequest
-from project.schemas.page_schema import ProcessedDocument, PageMetadata
 from project.schemas.result_schema import RetrievalResult, ParsedDocument, ExtractedContent, ProcessingError
 from project.models.job import JobStatus, ScrapingJob
 from project.services.crawler import Crawler

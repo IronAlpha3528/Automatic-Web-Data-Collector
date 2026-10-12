@@ -3,7 +3,6 @@ Web UI dashboard routes using Jinja2 templates.
 Implements the Presentation layer conforming to Section 7 of the Design Document.
 """
 from pathlib import Path
-from typing import List, Optional
 from fastapi import APIRouter, Request, Form, Depends, HTTPException, responses, status
 from fastapi.templating import Jinja2Templates
 
@@ -139,4 +138,18 @@ async def job_errors_view(
         request=request,
         name="errors.html",
         context={"job": job.model_dump(), "errors": errors, "active_tab": "dashboard"},
+    )
+
+
+@router.post("/jobs/{job_id}/cancel")
+async def cancel_job_action(
+    job_id: str,
+    request: Request,
+    manager: JobManager = Depends(get_job_manager),
+):
+    """Cancels an ongoing scraping job and redirects to monitor view."""
+    await manager.cancel_job(job_id)
+    return responses.RedirectResponse(
+        url=f"/jobs/{job_id}/monitor",
+        status_code=status.HTTP_303_SEE_OTHER,
     )

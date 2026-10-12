@@ -2,7 +2,7 @@
 Inter-stage typed pipeline contracts and error definitions.
 Enforces Rule 6 (Explicit Data Contracts) across processing stages.
 """
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Any, Optional, Union
 from pydantic import BaseModel, Field
 from project.schemas.page_schema import DocumentLink, MediaReference, ProcessedDocument
 

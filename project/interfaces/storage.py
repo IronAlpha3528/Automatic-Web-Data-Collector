@@ -2,10 +2,9 @@
 Storage interface protocol for database persistence.
 Allows the Crawler and JobManager to persist state without knowing the database schema.
 """
-from typing import Protocol, runtime_checkable, Optional, List
-from project.schemas.page_schema import ProcessedDocument, MediaReference
+from typing import Protocol, runtime_checkable, Optional
+from project.schemas.page_schema import ProcessedDocument
 from project.schemas.result_schema import ProcessingError
-from project.schemas.job_schema import JobResponse
 
 
 @runtime_checkable

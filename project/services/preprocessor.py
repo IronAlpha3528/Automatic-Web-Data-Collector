@@ -8,9 +8,8 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from project.schemas.result_schema import ExtractedContent
-from project.schemas.page_schema import ProcessedDocument, PageMetadata, MediaReference, DocumentLink
+from project.schemas.page_schema import ProcessedDocument, PageMetadata, MediaReference
 from project.utils.hashing import compute_content_hash
-from project.utils.logging import logger
 
 
 class ContentPreprocessor:
